@@ -1,0 +1,181 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Mining Elite</title>
+    <style>
+        :root {
+            --aura-purple: #bc13fe;
+            --aura-glow: 0 0 20px #bc13fe;
+            --bg-dark: #050505;
+        }
+
+        body {
+            margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-dark); color: white;
+            height: 100vh; display: flex; overflow: hidden;
+        }
+
+        /* الهالة الخلفية الثابتة */
+        .bg-aura {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 65vw; font-weight: bold; color: rgba(188, 19, 254, 0.01);
+            z-index: -1; pointer-events: none;
+        }
+
+        /* تصميم الشعار المركزي مع الهالة الدوارة */
+        .logo-container {
+            position: relative; width: 120px; height: 120px; margin: 0 auto 20px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .aura-logo {
+            font-size: 80px; font-weight: bold; z-index: 2;
+            text-shadow: var(--aura-glow);
+        }
+
+        /* الهالة الدوارة (تظهر عند التعدين) */
+        .mining-ring {
+            position: absolute; width: 100%; height: 100%;
+            border: 4px solid transparent; border-top: 4px solid var(--aura-purple);
+            border-radius: 50%; display: none; /* مخفية افتراضياً */
+            animation: rotate 1.5s linear infinite;
+            box-shadow: inset 0 0 15px var(--aura-purple);
+        }
+
+        @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* المحتوى المركزي */
+        .main-content { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .central-card {
+            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(25px);
+            padding: 40px; border-radius: 40px; border: 1px solid rgba(188, 19, 254, 0.15);
+            width: 420px; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.9);
+        }
+
+        /* الأزرار الجانبية */
+        .side-trigger {
+            position: fixed; top: 50%; transform: translateY(-50%);
+            background: var(--aura-purple); padding: 25px 12px;
+            writing-mode: vertical-rl; cursor: pointer; font-weight: bold;
+            box-shadow: var(--aura-glow); transition: 0.3s; z-index: 100;
+        }
+        .left-btn { left: 0; border-radius: 0 15px 15px 0; }
+        .right-btn { right: 0; border-radius: 15px 0 0 15px; }
+
+        /* القوائم الجانبية */
+        .side-panel {
+            position: fixed; top: 0; width: 320px; height: 100%;
+            background: #0d0d0d; border: 1px solid var(--aura-purple);
+            transition: 0.5s ease-in-out; padding: 30px; z-index: 101;
+            box-shadow: 0 0 60px rgba(0,0,0,1); display: flex; flex-direction: column;
+        }
+        #buyPanel { left: -380px; }
+        #minePanel { right: -380px; }
+        #buyPanel.open { left: 0; }
+        #minePanel.open { right: 0; }
+
+        input, select {
+            width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px;
+            border: 1px solid var(--aura-purple); background: #151515; color: white; text-align: center;
+        }
+        .action-btn {
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            background: var(--aura-purple); color: white; font-weight: bold;
+            cursor: pointer; margin-top: 10px; box-shadow: var(--aura-glow);
+        }
+
+        .mining-display { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 15px; margin: 20px 0; }
+        .close-x { cursor: pointer; color: #666; margin-bottom: 20px; display: block; text-align: left; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-aura">A</div>
+
+    <div class="side-trigger left-btn" onclick="togglePanel('buyPanel')">شراء الهاش الآن ←</div>
+    <div class="side-trigger right-btn" onclick="togglePanel('minePanel')">→ التعدين والمحفظة</div>
+
+    <!-- قائمة الشراء -->
+    <div class="side-panel" id="buyPanel">
+        <span class="close-x" onclick="togglePanel('buyPanel')">إغلاق ×</span>
+        <h2 style="color: var(--aura-purple);">متجر الهاش</h2>
+        <select id="hashSelect" onchange="updatePrice()"></select>
+        <div class="mining-display">
+            <small>التكلفة المطلوبة:</small>
+            <div id="priceDisplay" style="font-size: 1.5rem; color: #00ff88;">1.50 USDT</div>
+        </div>
+        <button class="action-btn">تأكيد الدفع</button>
+    </div>
+
+    <!-- قائمة التعدين -->
+    <div class="side-panel" id="minePanel">
+        <span class="close-x" onclick="togglePanel('minePanel')">إغلاق ×</span>
+        <h2 style="color: var(--aura-purple);">منصة التعدين</h2>
+        <div class="mining-display">
+            <div id="liveMined" style="font-size: 1.8rem; font-weight: bold;">0.00 AURA</div>
+            <div id="liveValue" style="color: #00ff88;">$ 0.00 USDT</div>
+        </div>
+        <button class="action-btn" id="mineBtn" onclick="startMining()">ابدأ التعدين الآن</button>
+        <div style="margin-top: 30px; border-top: 1px solid #222; padding-top: 20px;">
+            <input type="text" placeholder="عنوان محفظة Solana">
+            <button class="action-btn" style="background: #1a1a1a;">أرسل للمحفظة</button>
+        </div>
+    </div>
+
+    <!-- الواجهة الرئيسية -->
+    <div class="main-content">
+        <div class="central-card">
+            <div class="logo-container">
+                <div class="mining-ring" id="glowRing"></div>
+                <div class="aura-logo">A</div>
+            </div>
+            <h3 style="letter-spacing: 3px; color: var(--aura-purple);">AURA NETWORK</h3>
+            <div style="margin: 25px 0;">
+                <small style="color: #666;">القيمة السوقية</small>
+                <div style="font-size: 1.8rem; font-weight: bold; color: #00ff88;">$1,470,000</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 20px;">
+                <input type="number" id="calcInput" placeholder="كمية Aura" oninput="doCalc()">
+                <div id="calcRes" style="color: var(--aura-purple); font-weight: bold; margin-top: 5px;">0.00 USDT</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const select = document.getElementById('hashSelect');
+    for (let h = 100; h <= 2000; h += 100) {
+        let opt = document.createElement('option');
+        opt.value = h; opt.text = h + " Hashrate";
+        select.appendChild(opt);
+    }
+
+    function togglePanel(id) { document.getElementById(id).classList.toggle('open'); }
+    function updatePrice() { 
+        const h = document.getElementById('hashSelect').value;
+        document.getElementById('priceDisplay').innerText = ((h/100)*1.5).toFixed(2) + " USDT";
+    }
+    function doCalc() { 
+        const v = document.getElementById('calcInput').value;
+        document.getElementById('calcRes').innerText = (v * 0.6).toFixed(2) + " USDT";
+    }
+
+    let mined = 0, isMining = false;
+    function startMining() {
+        if(isMining) return;
+        isMining = true;
+        document.getElementById('glowRing').style.display = "block"; // إظهار الهالة الدوارة
+        document.getElementById('mineBtn').innerText = "تعدين نشط...";
+        document.getElementById('mineBtn').style.background = "#444";
+        
+        setInterval(() => {
+            mined += 0.01;
+            document.getElementById('liveMined').innerText = mined.toFixed(2) + " AURA";
+            document.getElementById('liveValue').innerText = "$ " + (mined * 0.6).toFixed(2) + " USDT";
+        }, 1000);
+    }
+</script>
+
+</body>
+</html>
